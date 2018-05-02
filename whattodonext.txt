@@ -1,0 +1,6 @@
+First I retrieve all the functions for a given subject and objects 
+Then I should retrieve all the functions for a given object
+
+I should compare these two to find the missing functions a given subject object relationship has. 
+
+Technically the function available is dependent on where it comes from so we must have two different cases for the parameters for the functions in an object nad the functions for a S O (Subject Object)
