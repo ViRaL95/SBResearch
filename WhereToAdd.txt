@@ -1,0 +1,18 @@
+When you want to add a new URI For example editParametersForFunction you must add a class to the IOTController Class, located in the iot.router package please follow the format in that class
+
+When you want to make ar equest to this URI (lets say a PUT Request in ordeer to edit a parameter for a function) you must send an AJAX Request to the uri just created
+
+this should be done in a javascript file using JQuery. JQuery is the only library that allows you to send an AJAX Request so this library is not replacable. Yo can create your
+Javscript file in the static/js package.
+
+When one would like to create an HTML file please look into the templates package.
+
+All jars should be stored in the jars module.
+
+Any exceptions should be stored in the exceptions package
+
+When you would like to make a database query, please look into the Objects class located in the iot.database package. This package contains an abstract superclass known
+as DatabaseTemplate, Objects is a subclass of this super class. In order to create a new class invoking database queries, please make sure this is a subclass of the
+DatabaseTemplate class. The Objects class contains an enumeration with all the queries that are used in this application. If/when you would like to create your own class
+to make requests to the database please ensure you have an enum containing all Database Queries
+

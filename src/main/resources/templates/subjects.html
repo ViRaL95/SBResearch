@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"></link>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="subjects_style.css"></link>
+<script type="text/javascript" src="subjects_js.js"></script>
+<head>
+    <link rel="stylesheet" href="subjects_style.css"></link>
+    <meta charset="UTF-8"></meta>
+    <title>Title</title>
+</head>
+<body>
+
+<button class="glyphicon glyphicon-plus btn btn-default add" type="button"  data-toggle="modal" data-target="#create_dialog"></button>
+<form>
+    <div class="form_group">
+        <input id="search_first_name" type="text" placeholder="Search first name" class="form-control"></input>
+        <input id="search_last_name" type="text" placeholder="Search last name" class="form-control"></input>
+        <input id="search_subject_type" type="text" placeholder="Search subject type" class="form-control"></input>
+        <button  type="button" class="btn-btn-primary" id="search_subject_button"> Search subject </button>
+    </div>
+</form>
+<div class="modal fade" id="create_dialog" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div>
+                    <div class="form-group" id="create_subject_id_section">
+                        <label> Subject ID </label>
+                        <input class="form-control" placeholder="Enter subject id"> </input>
+                    </div>
+                    <div class="form-group"  id="create_subject_type_section">
+                        <label> Subject Type </label>
+                        <input class="form-control" placeholder="Enter subject type"> </input>
+                    </div>
+                    <div class="form-group" id="create_subject_first_name_section">
+                        <label> First Name </label>
+                        <input class="form-control" placeholder="Enter first name"> </input>
+                    </div>
+                    <div class="form-group" id="create_subject_last_name_section">
+                        <label> Last Name </label>
+                        <input class="form-control" placeholder="Enter Last name"> </input>
+                    </div>
+                    <div class="form-group" id="create_subject_email_section">
+                        <label> Email </label>
+                        <input class="form-control" placeholder="Enter Email"> </input>
+                    </div>
+                    <button type="submit" id="create_button" class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="update_dialog" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div>
+                    <div class="form-group" id="subject_id_section">
+                        <label> Subject ID </label>
+                        <input class="form-control" placeholder="Enter subject id"> </input>
+                    </div>
+                    <div class="form-group"  id="subject_type_section">
+                        <label> Subject Type </label>
+                        <input class="form-control" placeholder="Enter subject type"> </input>
+                    </div>
+                    <div class="form-group" id="subject_first_name_section">
+                        <label> Subject First Name </label>
+                        <input class="form-control" placeholder="Enter subject first nmae"> </input>
+                    </div>
+                    <div class="form-group" id="subject_last_name_section">
+                        <label> Subject Last Name </label>
+                        <input class="form-control" placeholder="Enter subject last name "> </input>
+                    </div>
+                    <div class="form-group" id="subject_email_section">
+                        <label> Subject Email Address </label>
+                        <input class="form-control" placeholder="Enter subject email "> </input>
+                    </div>
+                    <button type="submit" id="update_button" class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+    </div>
+</div>
+
+<div  th:fragment="refreshTable">
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>    Subject Id   </th>
+            <th>    Subject Type </th>
+            <th>    First Name      </th>
+            <th>    Last Name      </th>
+            <th>    Email          </th>
+            <th>    Delete      </th>
+            <th>    Update      </th>
+        </tr>
+        </thead>
+        <tbody >
+
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
+

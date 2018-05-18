@@ -6,10 +6,10 @@ import java.sql.Statement;
 import java.sql.ResultSet;
 
 import iot.exceptions.DatabaseInitializationException;
-import org.json.JSONObject;
-
 public abstract class DatabaseTemplate{
-
+    /**
+     * An enum containing database information.
+     */
     protected enum DatabaseConnectionTypes {
         USERNAME("user=root&"),  PASSWORD("password=FanYe-2018"), SERVER("localhost:3306/"), CONNECTIONTYPE("jdbc:mysql://"), DATABASENAME("MANAGEMENT_SYSTEM?");
 
@@ -27,6 +27,11 @@ public abstract class DatabaseTemplate{
     protected static String url   =                      DatabaseConnectionTypes.CONNECTIONTYPE.value + DatabaseConnectionTypes.SERVER.value + DatabaseConnectionTypes.DATABASENAME.value +
                                                          DatabaseConnectionTypes.USERNAME.value + DatabaseConnectionTypes.PASSWORD.value;
 
+    /**
+     *
+     * @return This class follows a singleton patten to enure that only one connection is made to the database
+     * @throws DatabaseInitializationException
+     */
 
     public static Connection getConnection () throws DatabaseInitializationException {
         try{
@@ -40,7 +45,6 @@ public abstract class DatabaseTemplate{
             throw new DatabaseInitializationException("Database could not be intiialized");
         }
     }
-
 
     public void close_connection(){
         if (this.response != null){

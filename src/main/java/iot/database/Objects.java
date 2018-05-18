@@ -1,16 +1,11 @@
 package iot.database;
 
-import iot.IOT.IOTObject;
-import iot.IOT.IOTSubject;
 import iot.exceptions.DatabaseInitializationException;
 import iot.exceptions.RetrieveObjectsException;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import javax.xml.transform.Result;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Random;
 
 public class Objects extends DatabaseTemplate {
     /**
@@ -20,10 +15,17 @@ public class Objects extends DatabaseTemplate {
         QUERYSUBJECTSOBJECTSTABLEFORSUBJECT("SELECT * FROM SUBJECTS_OBJECTS_RELATIONSHIP WHERE subject_id=%d"),
         QUERYALLOBJECTS("SELECT * FROM OBJECTS WHERE object_id=%d"),
         QUERYOBJECTANDCOLORS("SELECT * FROM OBJECTS LEFT JOIN COLORS ON OBJECTS.object_type = COLORS.object_type ORDER BY object_id"),
+        QUERYALLSUBJECTS("SELECT * FROM SUBJECTS"),
         QUERYUPDATEOBJECT("UPDATE OBJECTS SET building='%s', room='%s', object_type='%s' WHERE object_id=%d"),
+        QUERYUPDATESUBJECT("UPDATE SUBJECTS SET subject_type='%s', first_name='%s', last_name='%s', email='%s' WHERE subject_id=%d"),
         DELETEOBJECT("DELETE FROM OBJECTS WHERE object_id=%d"),
+        DELETESUBJECT("DELETE FROM SUBJECTS WHERE subject_id=%d"),
+        INSERTFUNCTIONIDOBJECTSTABLE("UPDATE OBJECTS SET function_id=%d WHERE object_id=%d"),
+        INSERTFUNCTIONIDSUBJECTSOBJECTSTABLE("UPDATE SUBJECTS_OBJECTS_RELATIONSHIP SET function_id=%d WHERE subject_id=%d AND object_id=%d"),
         CREATEOBJECT("INSERT INTO OBJECTS (object_id, object_type, room, building) VALUES (%d, '%s', '%s', '%s')"),
-        SEARCHOBJECT("SELECT * FROM OBJECTS WHERE "),
+        CREATESUBJECT("INSERT INTO SUBJECTS (subject_id, subject_type, first_name, last_name, email) VALUES (%d, '%s', '%s', '%s', '%s')"),
+        CREATEFUNCTIONFORSUBJECTOBJECT("INSERT INTO FUNCTIONS (function_id, function_name) VALUES (%d, '%s')"),
+        SEARCHOBJECT("SELECT * FROM SUBJECTS WHERE "),
         CHECKIFFUNCTIONEXISTSFORSUBJECTUSER("SELECT * FROM SUBJECTS_OBJECTS_RELATIONSHIP LEFT JOIN FUNCTIONS ON SUBJECTS_OBJECTS_RELATIONSHIP.function_id=FUNCTIONS.function_id WHERE subject_id=%d AND object_id=%d AND function_name='%s'"),
         RETRIEVEFUNCTIONIDFROMSUBJECTSOBJECTSTABLE("SELECT * FROM SUBJECTS_OBJECTS_RELATIONSHIP WHERE subject_id=%d AND object_id=%d"),
         FUNCTIONSQUERY("SELECT * FROM FUNCTIONS WHERE function_id=%d"),
@@ -31,14 +33,17 @@ public class Objects extends DatabaseTemplate {
         QUERYFUNCTIONSFOROBJECT("SELECT * FROM OBJECTS LEFT JOIN OBJECT_FUNCTIONS ON OBJECTS.function_id=OBJECT_FUNCTIONS.function_id WHERE object_id=%d"),
         RETRIEVEPARAMETERIDFROMOBJECTFUNCTIONSTABLE("SELECT * FROM OBJECT_FUNCTIONS WHERE function_id=%d AND function_name='%s'"),
         QUERYOBJECTSPARAMETERS("SELECT * FROM OBJECT_PARAMETERS WHERE parameter_id=%d"),
-        ENABLEFUNCTION("INSERT INTO FUNCTIONS (function_id, function_name, parameter_id) VALUES %d, '%s', %d"),
-        DISABLEFUNCTION("DELETE FROM FUNCTIONS WHERE ");
+        CREATEFUNCTIONFOROBJECT("INSERT INTO OBJECT_FUNCTIONS (function_id, function_name) VALUES (%d, '%s')"),
+        DELETEFUNCTIONFROMOBJECT("DELETE FROM OBJECT_FUNCTIONS WHERE function_id=%d AND function_name='%s'");
         private String query;
         ObjectsQueries(String query){
             this.query = query;
         }
     }
 
+    /**
+     * An enum used to describe the parameters in the Object Table
+     */
     public enum ObjectParameters{
         OBJECTTYPE("object_type"),
         ROOM("room"),
@@ -56,7 +61,6 @@ public class Objects extends DatabaseTemplate {
         try{
             statement = getConnection().createStatement();
         }catch (DatabaseInitializationException | SQLException ex){
-            System.out.println(ex.getMessage());
         }
     }
 
@@ -96,6 +100,38 @@ public class Objects extends DatabaseTemplate {
     }
 
     /**
+     * This method is used to retrieve all the subjects in the subjects table
+     * @return a JSONArray containing all the subjects in our subjects table
+     *
+     */
+
+    public JSONArray retrieveAllSubjects(){
+        JSONArray subjects = new JSONArray();
+        try{
+            Connection connection = getConnection();
+            Statement statement = connection.createStatement();
+            ResultSet response = statement.executeQuery(ObjectsQueries.QUERYALLSUBJECTS.query);
+            while (response.next()){
+                String subject_type = response.getString("subject_type");
+                String first_name = response.getString("first_name");
+                String last_name = response.getString("last_name");
+                String email = response.getString("email");
+                int subject_id = response.getInt("subject_id");
+                JSONObject subject = new JSONObject();
+                subject.put("subject_type", subject_type);
+                subject.put("first_name", first_name);
+                subject.put("last_name", last_name);
+                subject.put("email", email);
+                subject.put("subject_id", subject_id);
+                subjects.put(subject);
+            }
+        }
+        catch(SQLException | DatabaseInitializationException ex){
+        }
+        return subjects;
+    }
+
+    /**
      * This method is used when one tries to update a given object in the objects table
      * @param new_object this is the information about the object that the user would
      *                   like to update
@@ -119,6 +155,29 @@ public class Objects extends DatabaseTemplate {
     }
 
     /**
+     * This method is used to update a subject in the subjects table
+     * @param new_object this is the new object containing the information for the new object
+     */
+
+    public void update_subjects(JSONObject new_object){
+        try{
+            Connection connection = getConnection();
+            Statement statement = connection.createStatement();
+            int subject_id = Integer.parseInt(new_object.getString("subject_id"));
+            String subject_type = new_object.getString("subject_type");
+            String first_name = new_object.getString("first_name");
+            String last_name = new_object.getString("last_name");
+            String email = new_object.getString("email");
+            String update_object = String.format(ObjectsQueries.QUERYUPDATESUBJECT.query, subject_type, first_name, last_name, email, subject_id);
+            statement.executeUpdate(update_object);
+        }
+        catch(DatabaseInitializationException | SQLException ex){
+
+        }
+    }
+
+
+    /**
      * This method is used when one deletes a given object.
      * @param object_to_delete the information about the objecct we are trying to delete. This
      *                         will occur in the objects page when a user selects an object to delete.
@@ -127,7 +186,6 @@ public class Objects extends DatabaseTemplate {
     public void delete_object(JSONObject object_to_delete){
         int object_id = Integer.parseInt(object_to_delete.getString("object_id"));
         String delete_object_query = String.format(ObjectsQueries.DELETEOBJECT.query, object_id);
-        System.out.println(delete_object_query);
         try {
             Connection conn = getConnection();
 
@@ -135,7 +193,24 @@ public class Objects extends DatabaseTemplate {
             preparedStmt.executeUpdate();
         }
         catch (DatabaseInitializationException | SQLException ex){
-            System.out.println(ex.getMessage());
+        }
+
+    }
+
+    /**
+     * This method is used to d delete a given subject.
+     * @param subject_to_delete the information about the object we are trying to delete
+     */
+
+    public void delete_subject(JSONObject subject_to_delete){
+        int object_id = Integer.parseInt(subject_to_delete.getString("subject_id"));
+        String delete_object_query = String.format(ObjectsQueries.DELETESUBJECT.query, object_id);
+        try {
+            Connection conn = getConnection();
+            PreparedStatement preparedStmt = conn.prepareStatement(delete_object_query);
+            preparedStmt.executeUpdate();
+        }
+        catch (DatabaseInitializationException | SQLException ex){
         }
 
     }
@@ -153,11 +228,30 @@ public class Objects extends DatabaseTemplate {
         try {
             PreparedStatement preparedStatement = getConnection().prepareStatement(create_object_query);
             preparedStatement.executeUpdate();
+            addFunctionForObject(object_to_create);
         }
         catch (DatabaseInitializationException | SQLException ex){
-            System.out.println(ex.getMessage());
         }
 
+    }
+
+    /**
+     * This method is used to create a new subject in the subjects table
+     * @param subject_to_create The JSONObject containing information about the subject we would like to create
+     */
+    public void create_subject(JSONObject subject_to_create){
+        int subject_id = Integer.parseInt(subject_to_create.getString("subject_id"));
+        String subject_type = subject_to_create.getString("subject_type");
+        String email = subject_to_create.getString("email");
+        String first_name = subject_to_create.getString("first_name");
+        String last_name = subject_to_create.getString("last_name");
+        String create_subject_query = String.format(ObjectsQueries.CREATESUBJECT.query, subject_id, subject_type, first_name, last_name, email);
+        try {
+            PreparedStatement preparedStatement = getConnection().prepareStatement(create_subject_query);
+            preparedStatement.executeUpdate();
+        }
+        catch (DatabaseInitializationException | SQLException ex){
+        }
     }
 
     /**
@@ -165,7 +259,7 @@ public class Objects extends DatabaseTemplate {
      * a query based on the object information (building, object type, room) retrieved from the
      * user. The javascript code sends this method information about the types of each property
 
-     * @param objectToSearch Information on the object that we would like to search. The information in this is used to build th search querey
+     * @param objectToSearch Information on the object that we would like to search. The information in this is used to build th search query
      * @return a JSONArray containing all the objects that match the searched object
      */
     public JSONArray searchObject(JSONArray objectToSearch){
@@ -177,7 +271,6 @@ public class Objects extends DatabaseTemplate {
             String type = currentObject.getString("type");
             String value = currentObject.getString("value");
             searchObject += query_type + "=";
-            System.out.println(value);
             if (type.equals("string")){
                 searchObject += "'"+ value + "'";
             }
@@ -206,10 +299,65 @@ public class Objects extends DatabaseTemplate {
                 searchObjectsArray.put(jsonObject);
             }
         } catch (DatabaseInitializationException | SQLException ex){
-            System.out.println("HEEEEEE");
         }
         return searchObjectsArray;
     }
+
+
+    /**
+     * If a user wants to search for a given subject he can use this method. This method builds
+     * a query based on the object information (building, object type, room) retrieved from the
+     * user. The javascript code sends this method information about the types of each property
+
+     * @param objectToSearch Information on the object that we would like to search. The information in this is used to build th search query
+     * @return a JSONArray containing all the objects that match the searched object
+     */
+    public JSONArray searchSubject(JSONArray objectToSearch){
+        String searchSubject = ObjectsQueries.SEARCHOBJECT.query;
+        JSONArray searchSubjectsArray = new JSONArray();
+        for (int i=0; i<objectToSearch.length(); i++){
+            JSONObject currentObject = (JSONObject) objectToSearch.get(i);
+            String query_type = currentObject.getString("queryType");
+            String type = currentObject.getString("type");
+            String value = currentObject.getString("value");
+            searchSubject += query_type + "=";
+            if (type.equals("string")){
+                searchSubject += "'"+ value + "'";
+            }
+            if (type.equals("int")){
+                searchSubject += value;
+            }
+            if (i != objectToSearch.length() - 1){
+                searchSubject += " AND ";
+            }
+        }
+
+        try {
+            Connection conn = getConnection();
+            Statement statement = conn.createStatement();
+            ResultSet response = statement.executeQuery(searchSubject);
+            while (response.next()){
+                int subject_id = response.getInt("subject_id");
+                String first_name = response.getString("first_name");
+                String last_name = response.getString("last_name");
+                String email = response.getString("email");
+                String subject_type = response.getString("subject_type");
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("subject_id", subject_id);
+                jsonObject.put("first_name", first_name);
+                jsonObject.put("last_name", last_name);
+                jsonObject.put("email", email);
+                jsonObject.put("subject_type", subject_type);
+                searchSubjectsArray.put(jsonObject);
+            }
+        } catch (DatabaseInitializationException | SQLException ex){
+        }
+        return searchSubjectsArray;
+    }
+
+
+
+
 
     /**
      * This is for the relationship page when we are trying to find the list of
@@ -275,6 +423,71 @@ public class Objects extends DatabaseTemplate {
 
         }
         return functions;
+    }
+
+    /**
+     * This method is used to delete a given function under an object
+     * @param functionObjectInformation
+     */
+    public void deleteFunctionForObject(JSONObject functionObjectInformation){
+        int object_id = functionObjectInformation.getInt("object_id");
+        String function_name = functionObjectInformation.getString("function_name");
+        String queryObjects = String.format(ObjectsQueries.QUERYALLOBJECTS.query, object_id);
+        try {
+            Connection conn = getConnection();
+            Statement statement = conn.createStatement();
+            ResultSet response = statement.executeQuery(queryObjects);
+            while (response.next()){
+                int function_id = response.getInt("function_id");
+                String deleteFunctionQuery = String.format(ObjectsQueries.DELETEFUNCTIONFROMOBJECT.query, function_id, function_name);
+                Statement statement2 = conn.createStatement();
+                statement2.executeUpdate(deleteFunctionQuery);
+            }
+        } catch (SQLException | DatabaseInitializationException ex){
+
+        }
+        return;
+    }
+
+    /**
+     * This method is used to add a function to a given object.
+     * @param functionObjectInformation
+     */
+    public void addFunctionForObject(JSONObject functionObjectInformation){
+        int object_id = functionObjectInformation.getInt("object_id");
+        String function_name = functionObjectInformation.getString("function_name");
+        try {
+            Connection conn = getConnection();
+            Statement statement = conn.createStatement();
+            String queryObjects = String.format(ObjectsQueries.QUERYALLOBJECTS.query, object_id);
+            ResultSet response = statement.executeQuery(queryObjects);
+            while (response.next()){
+                int function_id = response.getInt("function_id");
+                if (response.wasNull()){
+                    function_id = generateRandomNumberForPrimaryKey();
+                    String primaryKeyQuery = String.format(ObjectsQueries.INSERTFUNCTIONIDOBJECTSTABLE.query, function_id, object_id);
+                    Statement statement1 = conn.createStatement();
+                    statement1.executeUpdate(primaryKeyQuery);
+                }
+                String functionsQuery = String.format(ObjectsQueries.CREATEFUNCTIONFOROBJECT.query, function_id, function_name);
+                Statement statement2 = conn.createStatement();
+                statement2.executeUpdate(functionsQuery);
+            }
+        } catch (SQLException | DatabaseInitializationException ex){
+
+        }
+    }
+
+    /**
+     * This method is used to generate a random number for the primary key
+     * @return int. The primary key.
+     */
+
+    public int generateRandomNumberForPrimaryKey(){
+        Random primaryKey = new Random();
+        int Low = 1;
+        int High = 1000000;
+        return primaryKey.nextInt(High - Low) + Low;
     }
 
     /**
@@ -344,19 +557,18 @@ public class Objects extends DatabaseTemplate {
      * @param subjectObjectRelationshipInformation
      * @return a JSONArray containing JSONObjects with the respective parameters for a function.
      */
-    public JSONArray checkWhereToRetrieveParametersFrom(JSONObject subjectObjectRelationshipInformation){
+    public boolean  checkWhereToRetrieveParametersFrom(JSONObject subjectObjectRelationshipInformation){
         int object_id = subjectObjectRelationshipInformation.getInt("object_id");
         JSONObject functionExistsForUser = checkIfFunctionExistsForUserAndObject(subjectObjectRelationshipInformation);
         JSONArray parameters;
         if (functionExistsForUser.getBoolean("function_exists")){
-            //RETRIEVE PARAMETERS FROM SUBJECTS TABLE
-            parameters = retrieveParametersForFunctionThatExistsForSubject(subjectObjectRelationshipInformation);
+            //RETRIEVE PARAMETERS FROM FUNCTIONS TABLE
+            return true;
         }
         else{
+            return false;
             //RETRIEVE PARAMETERS FROM OBJECT FUNCTIONS TABE
-            parameters = retrieveParametersForFunctionThatDoesntExist(subjectObjectRelationshipInformation);
         }
-        return parameters;
     }
 
     /**
@@ -443,29 +655,26 @@ public class Objects extends DatabaseTemplate {
     public void enableFunctionForSubjectObjectRelationship(JSONObject relationshipInformation){
         int object_id = relationshipInformation.getInt("object_id");
         int subject_id = relationshipInformation.getInt("subject_id");
+        String function_name = relationshipInformation.getString("function_name");
         String query = String.format(ObjectsQueries.RETRIEVEFUNCTIONIDFROMSUBJECTSOBJECTSTABLE.query, subject_id, object_id);
         try{
-        Connection conn = getConnection();
-        Statement statement = conn.createStatement();
-        ResultSet response = statement.executeQuery(query);
-        while (response.next()){
-            int function_id = response.getInt("function_id");
-            //String query2 = String.format(ObjectsQueries.CREATENEWFUNCTION, function_id
-        }
+            Connection conn = getConnection();
+            Statement statement = conn.createStatement();
+            ResultSet response = statement.executeQuery(query);
+            while (response.next()){
+                int function_id = response.getInt("function_id");
+                if (response.wasNull()){
+                    function_id = generateRandomNumberForPrimaryKey();
+                    String primaryKeyQuery = String.format(ObjectsQueries.INSERTFUNCTIONIDSUBJECTSOBJECTSTABLE.query, function_id, subject_id, object_id);
+                    Statement statement1 = conn.createStatement();
+                    statement1.executeUpdate(primaryKeyQuery);
+                }
+                String createFunctionQuery = String.format(ObjectsQueries.CREATEFUNCTIONFORSUBJECTOBJECT.query, function_id, function_name);
+                Statement statement2 = conn.createStatement();
+                statement2.executeUpdate(createFunctionQuery);
+            }
         } catch (DatabaseInitializationException | SQLException ex){
 
         }
     }
-
-    /**
-     * Disable function that is available for a given subject and object
-     * @param relationshipInformation contains information about the object and subject
-     */
-
-    public void disableFunctionForSubjectObjectRelationship(JSONObject relationshipInformation){
-
-    }
-
-
-
 }
